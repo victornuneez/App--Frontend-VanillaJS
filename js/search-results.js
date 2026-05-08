@@ -1,4 +1,6 @@
 import { initDetail } from "./details.js";
+import { initAddLink } from "./addLink.js"; 
+import { initUpdate } from "./update.js";
 
 // Funcion que genera la estructura de filtrado y la lista de resultados
 const searchComponent = () => {
@@ -9,6 +11,11 @@ const searchComponent = () => {
         </div>
         <div id="results-list">
             <!--Aca se mostraran los links filtrados-->
+        </div>
+
+        <div id="btn-create">
+            <h2>Añadir Enlaces</h2>
+            <button class="derived-create">Crear recurso</button> 
         </div>
     </div>
     `;
@@ -114,6 +121,14 @@ const renderResults = (links) => {
             <p>${link.description}</p>
             <button class="btn-details" data-id="${link._id}">
                 Ver mas 
+            </button>
+            
+            <button class="btn-update" data-id="${link._id}">
+                Editar 
+            </button> 
+
+            <button class="btn-delete" data-id="${link._id}">
+                Eliminar 
             </button> 
         </div>
         `).join('');    // EL BOTON VER MAS ES EL EVENTO QUE DEBEMOS CAPTURAR PARA RENDERIZAR LA VISTA DE DETALLES DEL ARCHIVO DE DETAILS.JS
@@ -135,6 +150,69 @@ const captureClicksSeeMore = () => {
     });
 };
 
+const captureClickDelete = () => {
+    const container = document.getElementById("search-container");
+    container.addEventListener('click', async (event) => {
+
+        if(event.target.classList.contains('btn-delete')) {
+            const id = event.target.dataset.id;
+            const result = await deleteLink(id);
+
+            if(result) {
+                alert('Recurso eliminado correctamente')
+                initSearch();
+            
+            } else {
+                alert('Hubo problemas para eliminar el recurso')
+            }
+        }
+    });
+};
+
+// Funcion que captura los clics en el boton de editar y pasa el id del recurso a editar.
+const captureClicksUpdate = () => {
+    const container = document.getElementById("search-container");
+    container.addEventListener('click', async (event) => {
+
+        if (event.target.classList.contains('btn-update')) {
+            const linkID = event.target.dataset.id;
+            await initUpdate(linkID);
+
+        }
+        
+    });
+};
+
+// Funcion que captura los clics en el boton crear enlace.
+const captureClicksaddLink = () => {
+    const container = document.getElementById("search-container");
+    container.addEventListener('click', async (event) => {
+
+        if (event.target.classList.contains('derived-create')) {
+            await initAddLink();
+        }
+        
+    });
+};
+
+const deleteLink = async(id) => {
+    try {
+        if(!id) {
+            throw new Error('Faltan datos para realizar la operacion');
+        };
+
+        const response = await fetch(`http://localhost:3000/api/delete/${id}`, { method: "DELETE" });
+        if(!response.ok) throw new Error('Hubo un error en la operacion');
+        
+        const itemDelete = response.json();
+        return itemDelete;
+    
+    } catch(error) {
+        console.error('Hubo un problema al borrar: ', error.message);
+    }
+
+};
+
 // Funcion que inicializa la estructura principal, obtiene las etiquetas de la db y renderiza los botones de filtrado
 const initSearch = async () => {
     try {
@@ -144,6 +222,9 @@ const initSearch = async () => {
         // Nos aseguramos de inicialziar los capturadores de eventos despues de crearse la estructura base del contenedor de etiquetas y de los resultados
         captureClicksTags();
         captureClicksSeeMore();
+        captureClicksaddLink();
+        captureClickDelete();
+        captureClicksUpdate();
     
         const tags = await getTags();
         
@@ -159,3 +240,5 @@ const initSearch = async () => {
 };
 
 initSearch();
+
+export { initSearch };
