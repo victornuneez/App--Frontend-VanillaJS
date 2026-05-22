@@ -10,7 +10,9 @@ const searchComponent = () => {
             <!--Aca se inyectan las etiquetas dinamicamente-->
         </div>
         <div id="results-list">
-            <!--Aca se mostraran los links filtrados-->
+            <ol>
+                <!--Aca se mostraran los links filtrados-->
+            </ol>
         </div>
 
         <div id="btn-create">
@@ -117,19 +119,11 @@ const renderResults = (links) => {
 
     const linksHTML = links.map(link => `
         <div class="link-card">
-            <h3>${link.title}</h3>
-            <p>${link.description}</p>
-            <button class="btn-details" data-id="${link._id}">
-                Ver mas 
-            </button>
-            
-            <button class="btn-update" data-id="${link._id}">
-                Editar 
-            </button> 
-
-            <button class="btn-delete" data-id="${link._id}">
-                Eliminar 
-            </button> 
+                <h3>${link.title}</h3>
+                <p>${link.description}</p>
+                <button class="btn-details" data-id="${link._id}">
+                    Ver mas 
+                </button>
         </div>
         `).join('');    // EL BOTON VER MAS ES EL EVENTO QUE DEBEMOS CAPTURAR PARA RENDERIZAR LA VISTA DE DETALLES DEL ARCHIVO DE DETAILS.JS
         
@@ -150,38 +144,6 @@ const captureClicksSeeMore = () => {
     });
 };
 
-const captureClickDelete = () => {
-    const container = document.getElementById("search-container");
-    container.addEventListener('click', async (event) => {
-
-        if(event.target.classList.contains('btn-delete')) {
-            const id = event.target.dataset.id;
-            const result = await deleteLink(id);
-
-            if(result) {
-                alert('Recurso eliminado correctamente')
-                initSearch();
-            
-            } else {
-                alert('Hubo problemas para eliminar el recurso')
-            }
-        }
-    });
-};
-
-// Funcion que captura los clics en el boton de editar y pasa el id del recurso a editar.
-const captureClicksUpdate = () => {
-    const container = document.getElementById("search-container");
-    container.addEventListener('click', async (event) => {
-
-        if (event.target.classList.contains('btn-update')) {
-            const linkID = event.target.dataset.id;
-            await initUpdate(linkID);
-
-        }
-        
-    });
-};
 
 // Funcion que captura los clics en el boton crear enlace.
 const captureClicksaddLink = () => {
@@ -195,23 +157,7 @@ const captureClicksaddLink = () => {
     });
 };
 
-const deleteLink = async(id) => {
-    try {
-        if(!id) {
-            throw new Error('Faltan datos para realizar la operacion');
-        };
 
-        const response = await fetch(`http://localhost:3000/api/delete/${id}`, { method: "DELETE" });
-        if(!response.ok) throw new Error('Hubo un error en la operacion');
-        
-        const itemDelete = response.json();
-        return itemDelete;
-    
-    } catch(error) {
-        console.error('Hubo un problema al borrar: ', error.message);
-    }
-
-};
 
 // Funcion que inicializa la estructura principal, obtiene las etiquetas de la db y renderiza los botones de filtrado
 const initSearch = async () => {
@@ -223,17 +169,17 @@ const initSearch = async () => {
         captureClicksTags();
         captureClicksSeeMore();
         captureClicksaddLink();
-        captureClickDelete();
-        captureClicksUpdate();
     
         const tags = await getTags();
-        
-    
         if (!tags) {
             throw new Error('Error al obtener las etiquetas');
         }
         
         renderTags(tags);
+
+        const links = await getLinksByTag("Todos");
+        renderResults(links);
+
     } catch (error) {
         console.error("Hubo un problema: ", error.message);
     }
