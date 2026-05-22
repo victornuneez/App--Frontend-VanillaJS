@@ -61,7 +61,7 @@ const captureClicksUpdate = (id) => {
 
             if (result) {
                 alert("Recurso actualizado con exito")
-                container.reset();
+                container.reset(); // vacia los inputs.
     
             } else {
                 alert("Hubo un error al actualizar el recurso")
