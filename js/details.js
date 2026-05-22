@@ -1,4 +1,5 @@
 import { initSearch } from './search-results.js'
+import { initUpdate } from './update.js';
 
 // Funcion que genera la estructura base del componente de detalles
 const detailsComponent = () => {
@@ -28,31 +29,39 @@ const displayComments = (comments) => {
 }
 
 // Funcion que renderiza la vista de detalles del enlace seleccionado
-const renderDetails = (linkDetails) => {
+const renderDetails = (link) => {
     const container = document.getElementById('details-container');
 
-    if(linkDetails.length === 0) {
+    if(link.length === 0) {
         container.innerHTML = "<p>No se encontraron informacion detallada sobre este enlace"
     }
 
     const detailHTML = `
         <div class="see-more-card">
-            <h3>${linkDetails.title}</h3>
-            <p>Description: ${linkDetails.description}</p>
-            <p>Enlace: ${linkDetails.url}</p>
+            <h3>${link.title}</h3>
+            <p>Description: ${link.description}</p>
+            <p>Enlace: ${link.url}</p>
             <div class="actions">
-                <button class="btn-vote" data-id="${linkDetails._id}">
-                    Votar ${linkDetails.vote}
+                <button class="btn-vote" data-id="${link._id}">
+                    Votar ${link.vote}
+                </button>
+
+                <button class="btn-update" data-id="${link._id}">
+                    Editar 
+                </button> 
+
+                <button class="btn-delete" data-id="${link._id}">
+                    Eliminar 
                 </button>
             </div>
 
             <div class="comments-section">
                 <h4>Comentarios</h4>
                 <div id="comments-list">
-                    ${displayComments(linkDetails.comments)}
+                    ${displayComments(link.comments)}
                 </div>
                 <textarea id="comment-text" placeholder="Escribe un comentario"></textarea>
-                <button class="btn-comment" data-id="${linkDetails._id}">Enviar comentario</button>
+                <button class="btn-comment" data-id="${link._id}">Enviar comentario</button>
             </div>
         </div>
         `;
@@ -121,6 +130,38 @@ const captureClicksDetails = () => {
     });
 };
 
+const captureClickDelete = () => {
+    const container = document.getElementById("details-container");
+    container.addEventListener('click', async (event) => {
+
+        if(event.target.classList.contains('btn-delete')) {
+            const id = event.target.dataset.id;
+            const result = await deleteLink(id);
+
+            if(result) {
+                alert('Recurso eliminado correctamente')
+                initSearch();
+            
+            } else {
+                alert('Hubo problemas para eliminar el recurso')
+            }
+        }
+    });
+};
+
+// Funcion que captura los clics en el boton de editar y pasa el id del recurso a editar.
+const captureClicksUpdate = () => {
+    const container = document.getElementById("details-container");
+    container.addEventListener('click', async (event) => {
+
+        if (event.target.classList.contains('btn-update')) {
+            const linkID = event.target.dataset.id;
+            await initUpdate(linkID);
+
+        }
+        
+    });
+};
 
 // Funcion auxiliar para votar un enlace, usando la API
 const vote = async (id) => {
@@ -165,6 +206,24 @@ const addComment = async (id, text) => {
     }
 }
 
+const deleteLink = async(id) => {
+    try {
+        if(!id) {
+            throw new Error('Faltan datos para realizar la operacion');
+        };
+
+        const response = await fetch(`http://localhost:3000/api/delete/${id}`, { method: "DELETE" });
+        if(!response.ok) throw new Error('Hubo un error en la operacion');
+        
+        const itemDelete = response.json();
+        return itemDelete;
+    
+    } catch(error) {
+        console.error('Hubo un problema al borrar: ', error.message);
+    }
+
+};
+
 // Funcion que inicia la vista de detalles y al capturador de clics de votar, comentar.
 const initDetail = async (linkID) => {
     try {
@@ -172,15 +231,17 @@ const initDetail = async (linkID) => {
         app.innerHTML = detailsComponent();  // Inyectamos nuestro componente base
     
         // funcion que debe obtener toda la informacion de un link por medio de su ID.
-        const links = await getLink(linkID);
+        const link = await getLink(linkID);
 
-        if (!links) {
+        if(!link) {
             throw new Error('Error al obtener los detalles');
         }
         
-        renderDetails(links); // renderizar la informacion detallada del item seleccionado
+        renderDetails(link); // renderizar la informacion detallada del item seleccionado
         captureClicksDetails();
         captureClicksBack();
+        captureClickDelete();
+        captureClicksUpdate();
     } catch (error) {
         console.error("Hubo un problema: ", error.message);
     }
