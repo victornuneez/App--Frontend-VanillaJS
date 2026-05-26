@@ -1,6 +1,7 @@
-import { initDetail } from "./details.js";
-import { initAddLink } from "./addLink.js"; 
-import { initUpdate } from "./update.js";
+import { initViewDetail } from "./details.js";
+import { initViewAddLink } from "./addLink.js"; 
+import { initViewUpdate } from "./update.js";
+import { getTags, getLinksByTag } from "../api/api.js";
 
 // Funcion que genera la estructura de filtrado y la lista de resultados
 const searchComponent = () => {
@@ -22,25 +23,6 @@ const searchComponent = () => {
     </div>
     `;
 };
-
-
-// Funcion que obtiene todas las etiquetas de la DB(backend)
-const getTags = async () => {
-    try {
-        const response = await fetch('http://localhost:3000/app/tags'); 
-        // fetch no lanza un error automaticamente aunque falle la peticion, entonces forzamos el error en el caso en que haya un error.
-        if(!response.ok) { 
-            throw new Error('Error al obtener las etiquetas');
-        }
-
-        const tags = await response.json();
-        return tags; // array de objetos tags
-    
-    } catch (error) {
-        console.error("Hubo un problema con la peticion: ", error.message);
-    }
-};
-
 
 
 // Funcion para renderizar las etiquetas de filtro e insertarlas en su contenedor
@@ -67,42 +49,17 @@ const renderTags = (tags) => {
 // Funcion para escuchar los clics que se hagan en las etiquetas de filtro.(Delegacion de eventos).
 // Vigilamos los clicks en la etiqueta padre porque eso nos permite saber cual etiqueta hija se clickeo no importa cuantas etiquetas haya
 const captureClicksTags = () => {
-    let tagID;
     const container = document.getElementById('tags-filter');
     container.addEventListener('click', async (event) => {
 
         if (event.target.classList.contains('tag-button')) {
-            tagID = event.target.dataset.id;
+            const tagID = event.target.dataset.id;
             
             const links = await getLinksByTag(tagID);
             renderResults(links);
         }
         
     })
-}
-
-
-// Funcion que obtiene los enlaces de la DB por ID de la etiqueta seleccionada.
-const getLinksByTag = async(tagID) => {
-    let url;
-    
-    try {
-        if(tagID !== "Todos") {
-            url = `http://localhost:3000/app/links?id=${tagID}`; 
-        
-        }else {
-            url = 'http://localhost:3000/app/links' 
-        }
-
-        const response = await fetch(url);
-        if(!response.ok) throw new Error('Error al obtener los links'); 
-
-        const links = await response.json();
-        return links;
-    
-    } catch (error) {
-        console.error("Error en el filtrado: ", error.message);
-    }
 };
 
 
@@ -130,6 +87,7 @@ const renderResults = (links) => {
     resultsContainer.innerHTML = linksHTML;
 };
 
+
 // Funcion que captura los clics en el boton de ver mas.
 const captureClicksSeeMore = () => {
     const container = document.getElementById("results-list");
@@ -137,7 +95,7 @@ const captureClicksSeeMore = () => {
 
         if (event.target.classList.contains('btn-details')) {
             const linkID = event.target.dataset.id;
-            await initDetail(linkID);
+            await initViewDetail(linkID);
 
         }
         
@@ -151,7 +109,7 @@ const captureClicksaddLink = () => {
     container.addEventListener('click', async (event) => {
 
         if (event.target.classList.contains('derived-create')) {
-            await initAddLink();
+            await initViewAddLink();
         }
         
     });
@@ -160,7 +118,7 @@ const captureClicksaddLink = () => {
 
 
 // Funcion que inicializa la estructura principal, obtiene las etiquetas de la db y renderiza los botones de filtrado
-const initSearch = async () => {
+const initViewSearch = async () => {
     try {
         const app = document.getElementById('app'); // obtenemos el contenedor donde insertaremos nuestros componentes
         app.innerHTML = searchComponent();  // Inyectamos nuestro componente base
@@ -185,6 +143,6 @@ const initSearch = async () => {
     }
 };
 
-initSearch();
+initViewSearch();
 
-export { initSearch };
+export { initViewSearch };
